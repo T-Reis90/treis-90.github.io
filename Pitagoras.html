@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Questões - Teorema de Pitágoras</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        }
+        .question-card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .question-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .difficulty-indicator {
+            width: calc(100% / 5);
+        }
+        .difficulty-indicator.active {
+            background-color: #4f46e5;
+        }
+        .btn-generate {
+            transition: all 0.3s ease;
+        }
+        .btn-generate:hover {
+            transform: scale(1.05);
+        }
+        .btn-generate:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-2xl">
+        <div class="bg-white rounded-2xl p-8 question-card">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Gerador de Questões</h1>
+                <h2 class="text-xl text-indigo-600 font-semibold">Teorema de Pitágoras</h2>
+                <p class="text-gray-600 mt-4">Selecione o nível de dificuldade e gere questões personalizadas</p>
+            </div>
+
+            <div class="mb-8">
+                <label for="difficulty" class="block text-sm font-medium text-gray-700 mb-2">Nível de Dificuldade</label>
+                
+                <div class="flex mb-2">
+                    <div class="difficulty-indicator h-2 rounded-l-full bg-indigo-200 mr-px"></div>
+                    <div class="difficulty-indicator h-2 bg-indigo-200 mr-px"></div>
+                    <div class="difficulty-indicator h-2 bg-indigo-200 mr-px"></div>
+                    <div class="difficulty-indicator h-2 bg-indigo-200 mr-px"></div>
+                    <div class="difficulty-indicator h-2 rounded-r-full bg-indigo-200"></div>
+                </div>
+                
+                <select id="difficulty" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="1">Nível 1 - Fácil (valores inteiros pequenos)</option>
+                    <option value="2">Nível 2 - Básico (valores inteiros médios)</option>
+                    <option value="3">Nível 3 - Intermediário (valores maiores)</option>
+                    <option value="4">Nível 4 - Avançado (encontrar cateto)</option>
+                    <option value="5">Nível 5 - Desafiador (raízes não exatas)</option>
+                </select>
+            </div>
+
+            <div class="flex justify-center">
+                <button id="generateBtn" class="btn-generate px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 flex items-center">
+                    <i class="fas fa-calculator mr-2"></i>
+                    Gerar Questão
+                </button>
+            </div>
+        </div>
+
+        <div id="questionContainer" class="bg-white rounded-2xl p-8 mt-6 question-card hidden">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Questão Gerada:</h3>
+                    <p id="questionText" class="text-gray-700 text-lg"></p>
+                </div>
+                <span id="difficultyBadge" class="px-3 py-1 rounded-full text-xs font-medium"></span>
+            </div>
+            
+            <div class="mt-6 flex justify-center">
+                <button id="newQuestionBtn" class="px-4 py-2 bg-indigo-100 text-indigo-700 font-medium rounded-lg hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 flex items-center">
+                    <i class="fas fa-redo mr-2"></i>
+                    Nova Questão
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const difficultySelect = document.getElementById('difficulty');
+            const generateBtn = document.getElementById('generateBtn');
+            const newQuestionBtn = document.getElementById('newQuestionBtn');
+            const questionContainer = document.getElementById('questionContainer');
+            const questionText = document.getElementById('questionText');
+            const difficultyBadge = document.getElementById('difficultyBadge');
+            const difficultyIndicators = document.querySelectorAll('.difficulty-indicator');
+            
+            // Update difficulty indicators
+            difficultySelect.addEventListener('change', function() {
+                const level = parseInt(this.value);
+                
+                difficultyIndicators.forEach((indicator, index) => {
+                    indicator.classList.remove('active');
+                    if (index < level) {
+                        indicator.classList.add('active');
+                    }
+                });
+            });
+            
+            // Generate question
+            function generateQuestion() {
+                const difficulty = parseInt(difficultySelect.value);
+                let question, a, b, c;
+                
+                // Set difficulty badge
+                difficultyBadge.textContent = `Nível ${difficulty}`;
+                difficultyBadge.className = `px-3 py-1 rounded-full text-xs font-medium ${getBadgeColor(difficulty)}`;
+                
+                // Generate question based on difficulty
+                switch(difficulty) {
+                    case 1: // Easy - small integers, find hypotenuse
+                        a = Math.floor(Math.random() * 5) + 3; // 3-7
+                        b = Math.floor(Math.random() * 5) + 3; // 3-7
+                        c = Math.sqrt(a*a + b*b);
+                        question = `Um triângulo retângulo tem catetos medindo ${a} e ${b}. Qual é o comprimento da hipotenusa?`;
+                        break;
+                        
+                    case 2: // Basic - medium integers, find hypotenuse
+                        a = Math.floor(Math.random() * 8) + 5; // 5-12
+                        b = Math.floor(Math.random() * 8) + 5; // 5-12
+                        c = Math.sqrt(a*a + b*b);
+                        question = `Em um triângulo retângulo, os catetos medem ${a} cm e ${b} cm. Calcule a medida da hipotenusa.`;
+                        break;
+                        
+                    case 3: // Intermediate - larger integers or find one leg
+                        if (Math.random() > 0.5) {
+                            // Find hypotenuse
+                            a = Math.floor(Math.random() * 10) + 8; // 8-17
+                            b = Math.floor(Math.random() * 10) + 8; // 8-17
+                            c = Math.sqrt(a*a + b*b);
+                            question = `Determine o valor da hipotenusa de um triângulo retângulo cujos catetos medem ${a} unidades e ${b} unidades.`;
+                        } else {
+                            // Find one leg
+                            a = Math.floor(Math.random() * 10) + 8; // 8-17
+                            c = Math.floor(Math.random() * 10) + a + 5; // Ensure c > a
+                            b = Math.sqrt(c*c - a*a);
+                            question = `Em um triângulo retângulo, a hipotenusa mede ${c} e um dos catetos mede ${a}. Qual é o comprimento do outro cateto?`;
+                        }
+                        break;
+                        
+                    case 4: // Advanced - find leg with larger numbers
+                        a = Math.floor(Math.random() * 15) + 10; // 10-24
+                        c = Math.floor(Math.random() * 15) + a + 5; // Ensure c > a
+                        b = Math.sqrt(c*c - a*a);
+                        question = `Um triângulo retângulo tem hipotenusa igual a ${c} cm. Sabendo que um dos catetos mede ${a} cm, calcule o comprimento do outro cateto.`;
+                        break;
+                        
+                    case 5: // Challenging - non-perfect squares or reverse thinking
+                        if (Math.random() > 0.5) {
+                            // Non-perfect squares
+                            a = Math.floor(Math.random() * 10) + 5; // 5-14
+                            b = Math.floor(Math.random() * 10) + 5; // 5-14
+                            c = Math.sqrt(a*a + b*b);
+                            question = `Calcule a hipotenusa de um triângulo retângulo com catetos ${a} e ${b}. Deixe sua resposta na forma de raiz quadrada se necessário.`;
+                        } else {
+                            // Reverse thinking - given hypotenuse and one leg is multiple of the other
+                            const multiple = [2, 3, 4][Math.floor(Math.random() * 3)];
+                            a = Math.floor(Math.random() * 5) + 3; // 3-7
+                            b = a * multiple;
+                            c = Math.sqrt(a*a + b*b);
+                            question = `Em um triângulo retângulo, a hipotenusa mede ${c.toFixed(2)} e um cateto é ${multiple} vezes o outro. Quais são os comprimentos dos catetos?`;
+                        }
+                        break;
+                }
+                
+                questionText.textContent = question;
+                questionContainer.classList.remove('hidden');
+            }
+            
+            // Get badge color based on difficulty
+            function getBadgeColor(difficulty) {
+                const colors = [
+                    'bg-green-100 text-green-800', // Level 1
+                    'bg-blue-100 text-blue-800',   // Level 2
+                    'bg-yellow-100 text-yellow-800', // Level 3
+                    'bg-orange-100 text-orange-800', // Level 4
+                    'bg-red-100 text-red-800'      // Level 5
+                ];
+                return colors[difficulty - 1];
+            }
+            
+            // Event listeners
+            generateBtn.addEventListener('click', generateQuestion);
+            newQuestionBtn.addEventListener('click', generateQuestion);
+            
+            // Initialize difficulty indicators
+            difficultySelect.dispatchEvent(new Event('change'));
+        });
+    </script>
+</body>
+</html>
